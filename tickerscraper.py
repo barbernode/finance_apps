@@ -54,7 +54,7 @@ def fetch_yahoo_data(ticker, api_key):
 # Streamlit app to input tickers and fetch data
 st.title('Financial Data Scraper from Yahoo Finance')
 
-api_key = "7b810b149b4272af0e8bf11ce2709e98"  # Your provided FRED API key
+api_key =   # Your provided FRED API key
 uploaded_file = st.file_uploader("Upload a CSV file with tickers", type=['csv'])
 if uploaded_file is not None:
     tickers_df = pd.read_csv(uploaded_file, encoding='ISO-8859-1')
