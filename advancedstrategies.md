@@ -71,7 +71,8 @@ plot_ichimoku(df)
 [1] Marco temporal principal donde se encontró la configuración de entrada = acción del precio alcista = sesgo alcista.
 [2] Marco temporal inferior = acción del precio alcista nuevamente = confirmando el sesgo alcista del marco temporal principal.
 [3] Marco temporal de entrada = acción del precio alcista nuevamente = confirma los otros dos marcos temporales = estrategia de entrada.
-Trade Corto con Confluencia de Marcos Temporales:
+
+### Trade Corto con Confluencia de Marcos Temporales:
 
 [1] Marco temporal principal donde se encontró la configuración de entrada = acción del precio bajista = sesgo bajista.
 [2] Marco temporal inferior = acción del precio bajista nuevamente = confirmando el sesgo bajista del marco temporal principal.
