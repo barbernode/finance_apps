@@ -1,0 +1,1 @@
+# Python Ideas for Trading
