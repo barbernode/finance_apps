@@ -1,9 +1,12 @@
+# Cost of Capital Analysis
+```python
 import streamlit as st
 import json
-
 st.title('Valuation App: Financial Metrics Analysis')
+```
 
-# Function to calculate WACC with actual cost of equity and debt values
+### Function to calculate WACC with actual cost of equity and debt values
+```python
 def calculate_wacc(equity, debt, interest_expense, tax_rate):
     total_value = equity + debt
     cost_of_equity = 0.1  # Replace with actual value if available
@@ -12,8 +15,11 @@ def calculate_wacc(equity, debt, interest_expense, tax_rate):
     weight_debt = debt / total_value
     wacc = (weight_equity * cost_of_equity) + (weight_debt * cost_of_debt * (1 - tax_rate))
     return wacc
+```
 
-# Function to calculate financial metrics
+### Function to calculate financial metrics
+```python
+
 def calculate_metrics(ticker_data, target_date):
     try:
         # Extract necessary data
@@ -74,8 +80,10 @@ def calculate_metrics(ticker_data, target_date):
         }
     except Exception as e:
         return f"Error calculating financial metrics: {e}"
+```
 
-# Load JSON data
+### Input and Output
+```python
 uploaded_file = st.file_uploader("Choose a JSON file")
 if uploaded_file is not None:
     data = json.load(uploaded_file)
@@ -100,3 +108,4 @@ if uploaded_file is not None:
     st.success("Data processing completed.")
 else:
     st.write("Please upload a JSON file to proceed.")
+```
