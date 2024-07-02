@@ -1,10 +1,16 @@
+## Fetching Ticker Data from Yahoo Finance
+
+```python
 import pandas as pd
 import yfinance as yf
 import json
 import streamlit as st
 import requests
+````
 
-# Function to fetch interest rates from FRED
+### Function to fetch interest rates from FRED
+
+```python
 def fetch_interest_rate_from_fred(api_key, series_id="DGS10"):
     url = f"https://api.stlouisfed.org/fred/series/observations?series_id={series_id}&api_key={api_key}&file_type=json"
     response = requests.get(url)
@@ -13,8 +19,10 @@ def fetch_interest_rate_from_fred(api_key, series_id="DGS10"):
         return float(data["observations"][-1]["value"]) / 100  # Convert percentage to decimal
     else:
         raise ValueError("Unable to fetch interest rates from FRED")
+```
 
-# Function to fetch data from Yahoo Finance
+### Function to fetch data from Yahoo Finance
+```python
 def fetch_yahoo_data(ticker, api_key):
     ticker = ticker.strip().upper()  # Ensure ticker is in correct format
     ticker_obj = yf.Ticker(ticker)
@@ -50,8 +58,10 @@ def fetch_yahoo_data(ticker, api_key):
         'beta': beta,
         'interest_rate': interest_rate
     }
+```
 
-# Streamlit app to input tickers and fetch data
+## Streamlit app to input tickers and fetch data
+```python
 st.title('Financial Data Scraper from Yahoo Finance')
 
 api_key =   # Your provided FRED API key
@@ -88,3 +98,5 @@ if uploaded_file is not None:
             json.dump(all_data, json_file, indent=4, default=str)
 
         st.write('Data has been successfully saved to financial_data.json')
+```
+
