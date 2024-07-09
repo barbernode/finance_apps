@@ -1,4 +1,4 @@
-# P&L Crafter
+# PnL Crafter
 
 ## Import Libraries
 ```python
