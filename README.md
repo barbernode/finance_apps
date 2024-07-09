@@ -1,10 +1,18 @@
 # 📈 Análisis Técnica con Python
 
 ## 🛠️ Bibliotecas Usadas
+
 ```python
-import pandas as pd  
-import numpy as np  
-import matplotlib.pyplot as plt  
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+```
+
+## Subo mi archivo de ejemplo
+
+```python
+df = pd.read_csv('scraped_historical_data.csv')
+print(df.head())
 ```
 
 ## 📊 Obtención de Indicadores
@@ -199,7 +207,9 @@ plt.show()
 ### 📈 Líneas de Tendencia
 
 ```python
-def identify_trend(df, window=20):
+def identify_trend(df
+
+, window=20):
     df['trend'] = np.where(df['close'] > df['close'].rolling(window).mean(), 'up', 'down')
     
     return df
@@ -214,12 +224,6 @@ def identify_reversal_patterns(df, pattern):
     # Placeholder de una función que identifica patrones de reversión específicos
     df['reversal_pattern'] = np.nan  # Ejemplo de marcador de posición
     
-    return df
-```
-
-### 📊 Patrones Gráficos
-
-```python
 df = identify_reversal_patterns(df, 'double_top')
 
 def identify_continuation_patterns(df, trend_col, pattern_col):
@@ -379,65 +383,61 @@ def vwap_reversion_strategy(df):
 def vwap_trend_following_strategy(df):
     df['signal'] = 0
     df['signal'][(df['close'] > df['vwap'])] = 1
-    df['signal'][(df['close'] < df['vwap'])] = -1
+    df['signal'][(
+
+df['close'] < df['vwap'])] = -1
     df['position'] = df['signal'].diff()
 
     return df
-
-def calculate_rsi(df, window=14):
-    delta = df['close'].diff()
-    gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()
-    loss = (-delta.where(delta < 0, 0)).rolling(window=window).mean()
-    rs = gain / loss
-    df['rsi'] = 100 - (100 / (1 + rs))
-    return df
+    
 ```
 
 ## 📚 Integración de Estrategias de Trading
 
+### 🕒 Paso 1: Análisis del Marco Temporal
 
-### 🕒Paso 1: Análisis del Marco Temporal  
+**Empezar desde marcos temporales más amplios (mensual y semanal) y luego pasar a marcos más cortos (diario e intradía):** Identificar niveles clave de soporte y resistencia en estos marcos temporales.
 
-**Empezar desde marcos temporales más amplios (mensual y semanal) y luego pasar a marcos más cortos (diario e intradía):** Identificar niveles clave de soporte y resistencia en estos marcos temporales.    
-**Calcular y visualizar el perfil de volumen para identificar POC, HVN y LVN:** Usar estos niveles como referencia para tomar decisiones de entrada y salida.    
-
+**Calcular y visualizar el perfil de volumen para identificar POC, HVN y LVN:** Usar estos niveles como referencia para tomar decisiones de entrada y salida.
 
 ### ✅ Paso 2: Confirmación Técnica
 
-**Calcular VWAP** y utilizarlo como referencia para identificar posibles puntos de reversión o seguimiento de tendencias.    
-**Calcular y visualizar el RSI Estocástico:** Buscar señales de reversión cuando el RSI Estocástico esté en niveles de sobrecompra o sobreventa.    
-**Calcular y visualizar los componentes de Ichimoku:** Confirmar señales de trading con cruces de Tenkan-sen y Kijun-sen y la posición del precio respecto a la nube Ichimoku.  
+**Calcular VWAP** y utilizarlo como referencia para identificar posibles puntos de reversión o seguimiento de tendencias.
 
+**Calcular y visualizar el RSI Estocástico:** Buscar señales de reversión cuando el RSI Estocástico esté en niveles de sobrecompra o sobreventa.
+
+**Calcular y visualizar los componentes de Ichimoku:** Confirmar señales de trading con cruces de Tenkan-sen y Kijun-sen y la posición del precio respecto a la nube Ichimoku.
 
 ### 🧠 Paso 3: Psicología y Gestión del Riesgo
 
 **Checklist y Guía de Entrada:**
 
-1. Seguir una lista de verificación antes de entrar en una operación.  
-2. Evaluar los pros y contras de cada operación potencial basándose en niveles clave y confirmaciones técnicas.  
-
+1. Seguir una lista de verificación antes de entrar en una operación.
+2. Evaluar los pros y contras de cada operación potencial basándose en niveles clave y confirmaciones técnicas.
 
 **Control Emocional:**
 
-1. Mantener la disciplina y seguir las reglas establecidas.  
-2. Aceptar la responsabilidad de las decisiones de trading y evitar culpar al mercado.  
-3. Adoptar una mentalidad de probabilidad y estar preparado para cualquier resultado.  
-
+1. Mantener la disciplina y seguir las reglas establecidas.
+2. Aceptar la responsabilidad de las decisiones de trading y evitar culpar al mercado.
+3. Adoptar una mentalidad de probabilidad y estar preparado para cualquier resultado.
 
 ## 🧩 Estrategias Avanzadas para Trading
 
 ### 📈 Trade Largo con Confluencia de Marcos Temporales
 
-**Marco temporal principal donde se encontró la configuración de entrada** = acción del precio alcista = sesgo alcista.  
-**Marco temporal inferior = acción del precio alcista nuevamente** = confirmando el sesgo alcista del marco temporal principal.  
-**Marco temporal de entrada = acción del precio alcista nuevamente** = confirma los otros dos marcos temporales = estrategia de entrada.  
+**Marco temporal principal donde se encontró la configuración de entrada:** Acción del precio alcista = sesgo alcista.
 
+**Marco temporal inferior:** Acción del precio alcista nuevamente = confirmando el sesgo alcista del marco temporal principal.
+
+**Marco temporal de entrada:** Acción del precio alcista nuevamente = confirma los otros dos marcos temporales = estrategia de entrada.
 
 ### 📉 Trade Corto con Confluencia de Marcos Temporales
 
-**Marco temporal principal donde se encontró la configuración de entrada** = acción del precio bajista = sesgo bajista.  
-**Marco temporal inferior = acción del precio bajista nuevamente** = confirmando el sesgo bajista del marco temporal principal.  
-**Marco temporal de entrada = acción del precio bajista nuevamente** = confirma los otros dos marcos temporales = estrategia de entrada.  
+**Marco temporal principal donde se encontró la configuración de entrada:** Acción del precio bajista = sesgo bajista.
+
+**Marco temporal inferior:** Acción del precio bajista nuevamente = confirmando el sesgo bajista del marco temporal principal.
+
+**Marco temporal de entrada:** Acción del precio bajista nuevamente = confirma los otros dos marcos temporales = estrategia de entrada.
 
 ```python
 def identify_time_frame_confluence(df, higher_time_frame, lower_time_frame, entry_time_frame):
@@ -454,14 +454,13 @@ def identify_time_frame_confluence(df, higher_time_frame, lower_time_frame, entr
     return df
 ```
 
-
 ### 📈 Estrategia de Combo de Tendencia Dinámica
 
-El combo de tendencia dinámica se enfoca en operar en la dirección de la tendencia dominante, esperando una ruptura seguida de un retroceso.  
+El combo de tendencia dinámica se enfoca en operar en la dirección de la tendencia dominante, esperando una ruptura seguida de un retroceso.
 
-1. Seguimiento de la tendencia principal.  
-2. Confirmar la ruptura y el retroceso.  
-3. Buscar confluencia de marcos temporales.  
+1. Seguimiento de la tendencia principal.
+2. Confirmar la ruptura y el retroceso.
+3. Buscar confluencia de marcos temporales.
 
 ```python
 def dynamic_trend_combo_strategy(df):
@@ -471,18 +470,19 @@ def dynamic_trend_combo_strategy(df):
     df['position'] = df['signal'].diff()
     
     return df
-    
 ```
-
 
 ### 📉 Gestión de Riesgo y Tamaño de Posición
 
-**Cuánto arriesgar por operación:** Como principiante, arriesga un máximo del 1% de tu cuenta por operación.  
-**Relación de Riesgo-Recompensa:** Asegúrate de que la relación riesgo-recompensa sea favorable, por ejemplo, 1:2.  
-**Stop-Loss y Objetivo de Beneficio:** Establece un stop-loss para limitar las pérdidas y un objetivo de beneficio para cerrar la posición en ganancias.  
-**Tamaño de la Posición:** Calcula el tamaño de la posición basado en el riesgo y el tamaño de la cuenta.  
+**Cuánto arriesgar por operación:** Como principiante, arriesga un máximo del 1% de tu cuenta por operación.
 
-### Ejemplo:
+**Relación de Riesgo-Recompensa:** Asegúrate de que la relación riesgo-recompensa sea favorable, por ejemplo, 1:2.
+
+**Stop-Loss y Objetivo de Beneficio:** Establece un stop-loss para limitar las pérdidas y un objetivo de beneficio para cerrar la posición en ganancias.
+
+**Tamaño de la Posición:** Calcula el tamaño de la posición basado en el riesgo y el tamaño de la cuenta.
+
+#### Ejemplo:
 
 ```python
 def calculate_position_size(account_balance, risk_per_trade, entry_price, stop_loss_price):
@@ -503,17 +503,21 @@ print(f"Tamaño de la posición: {position_size} unidades")
 
 ### 📈 Uso del Apalancamiento y el Margen
 
-**Apalancamiento:** Permite controlar una mayor cantidad de dinero con una menor cantidad de capital.  
-**Margen:** Es la cantidad de dinero que necesitas en tu cuenta para mantener una posición apalancada.  
-**Selección de Broker:** Elige un broker confiable y adecuado para tus necesidades.  
-**Practica en una cuenta demo antes de operar con dinero real.**  
+**Apalancamiento:** Permite controlar una mayor cantidad de dinero con una menor cantidad de capital.
 
+**Margen:** Es la cantidad de dinero que necesitas en tu cuenta para mantener una posición apalancada.
+
+**Selección de Broker:** Elige un broker confiable y adecuado para tus necesidades.
+
+**Practica en una cuenta demo antes de operar con dinero real.**
 
 ### 📊 Estrategia de Correlación Usando Bitcoin como Indicador Principal
 
-**Utilizar la configuración de Bitcoin como indicador principal para entradas correlacionadas**  
-**Confirmación de ruptura en Bitcoin:** Esperar una confirmación de ruptura en Bitcoin antes de buscar entradas en activos correlacionados.  
-**Entradas basadas en correlación:** Buscar configuraciones de entrada en activos que estén fuertemente correlacionados con Bitcoin.  
+**Utilizar la configuración de Bitcoin como indicador principal para entradas correlacionadas.**
+
+**Confirmación de ruptura en Bitcoin:** Esperar una confirmación de ruptura en Bitcoin antes de buscar entradas en activos correlacionados.
+
+**Entradas basadas en correlación:** Buscar configuraciones de entrada en activos que estén fuertemente correlacionados con Bitcoin.
 
 ```python
 def correlation_trading_strategy(df, lead_asset, correlated_asset):
@@ -526,9 +530,11 @@ def correlation_trading_strategy(df, lead_asset, correlated_asset):
 
 ### 📈 Ejemplo de Confluencia en USD/CAD
 
-**Marco temporal semanal:** Identificar una tendencia bajista.  
-**Marco temporal diario:** Confirmar la continuación de la tendencia bajista.  
-**Marco temporal intradía:** Buscar una entrada en una ruptura a la baja.  
+**Marco temporal semanal:** Identificar una tendencia bajista.
+
+**Marco temporal diario:** Confirmar la continuación de la tendencia bajista.
+
+**Marco temporal intradía:** Buscar una entrada en una ruptura a la baja.
 
 ```python
 def identify_trend(df, window=20):
@@ -545,14 +551,13 @@ def identify_pullback(df, window=20):
 
 ### 📉 Estrategia de Salida Múltiple
 
-Esta estrategia implica identificar múltiples niveles de soporte y resistencia para establecer varios objetivos de salida. La clave es observar la acción del precio en estos niveles para decidir en cuál salir.  
-
+Esta estrategia implica identificar múltiples niveles de soporte y resistencia para establecer varios objetivos de salida. La clave es observar la acción del precio en estos niveles para decidir en cuál salir.
 
 **Procedimiento:**
 
-1. Identificar niveles de soporte y resistencia cercanos.  
-2. Observar la acción del precio en estos niveles.  
-3. Salir en el nivel donde se observe una reacción significativa de la acción del precio.  
+1. Identificar niveles de soporte y resistencia cercanos.
+2. Observar la acción del precio en estos niveles.
+3. Salir en el nivel donde se observe una reacción significativa de la acción del precio.
 
 ```python
 def identify_exit_targets(df, levels):
@@ -565,27 +570,25 @@ def identify_exit_targets(df, levels):
 
 **Ejemplos:**
 
-1. Si hay múltiples velas de reacción en un nivel de resistencia, salir en ese nivel.  
-2. Si no hay reacción significativa en el primer nivel, esperar a los siguientes niveles.  
+1. Si hay múltiples velas de reacción en un nivel de resistencia, salir en ese nivel.
+2. Si no hay reacción significativa en el primer nivel, esperar a los siguientes niveles.
 
-
-## 🧩 Integración de Estrategias: 
+## 🧩 Integración de Estrategias
 
 Finalmente, integramos estas estrategias avanzadas con la gestión del riesgo, relación riesgo-recompensa y uso de indicadores líderes para entradas correlacionadas.
 
-
 **Gestión del Riesgo:**
 
-1. Riesgo por operación: No más del 1% del capital total.  
-2. Relación Riesgo-Recompensa: Idealmente 1:2 o mejor.  
+1. Riesgo por operación: No más del 1% del capital total.
+2. Relación Riesgo-Recompensa: Idealmente 1:2 o mejor.
 
-
-**Posicionamiento:** Calcular el tamaño de la posición basado en el riesgo máximo permitido y la distancia del stop-loss.  
-
+**Posicionamiento:** Calcular el tamaño de la posición basado en el riesgo máximo permitido y la distancia del stop-loss.
 
 ### Uso de Indicadores Líderes
 
-Utilizar la acción del precio de activos altamente correlacionados (como Bitcoin) para confirmar entradas en otros activos correlacionados (como acciones de empresas mineras de criptomonedas).  
+Utilizar la acción del precio de
+
+ activos altamente correlacionados (como Bitcoin) para confirmar entradas en otros activos correlacionados (como acciones de empresas mineras de criptomonedas).
 
 ```python
 # Gestión del riesgo
@@ -605,7 +608,7 @@ pip_value = calculate_position_size(entry_price, stop_loss_price, risk_per_trade
 print(f"Valor por pip: {pip_value}")
 ```
 
-### 📊  Visualización de la Estrategia Integrada
+### 📊 Visualización de la Estrategia Integrada
 
 ```python
 def plot_combined_strategy(df, vol_profile):
