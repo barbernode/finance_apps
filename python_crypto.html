@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis Técnica con Python</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        code {
+            font-family: "Courier New", Courier, monospace;
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        h1::before {
+            content: '📈 ';
+        }
+        h2::before {
+            content: '🛠️ ';
+        }
+        h3::before {
+            content: '📊 ';
+        }
+    </style>
+</head>
+<body>
+
+<h1>Análisis Técnica con Python</h1>
+
+<h2>Bibliotecas Usadas</h2>
+<pre><code>import pandas as pd  
+import numpy as np  
+import matplotlib.pyplot as plt  
+</code></pre>
+
+<h2>Obtención de Indicadores</h2>
+
+<h3>Cálculo de EMA</h3>
+<pre><code>df['EMA'] = df['close'].ewm(span=N, adjust=False).mean()
+
+short_window = 20
+long_window = 50
+
+df['SMA_short'] = df['close'].rolling(window=short_window).mean()
+df['SMA_long'] = df['close'].rolling(window=long_window).mean()
+
+# Señales de cruce
+df['Signal'] = 0.0
+df['Signal'][short_window:] = np.where(df['SMA_short'][short_window:] &gt; df['SMA_long'][short_window:], 1.0, 0.0)
+df['Position'] = df['Signal'].diff()
+
+# Cálculo de SMA y desviación estándar
+df['SMA_20'] = df['close'].rolling(window=20).mean()
+df['stddev'] = df['close'].rolling(window=20).std()
+
+# Bandas de Bollinger
+df['Upper Band'] = df['SMA_20'] + (df['stddev'] * 2)
+df['Lower Band'] = df['SMA_20'] - (df['stddev'] * 2)
+
+# Definición de ventanas cortas y largas
+short_window = 40
+long_window = 100
+
+# Cálculo de medias móviles
+df['short_mavg'] = df['close'].rolling(window=short_window, min_periods=1).mean()
+df['long_mavg'] = df['close'].rolling(window=long_window, min_periods=1).mean()
+
+# Señales de compra/venta
+df['signal'] = 0
+df['signal'][short_window:] = np.where(df['short_mavg'][short_window:] &gt; df['long_mavg'][short_window:], 1, 0)
+df['positions'] = df['signal'].diff()
+</code></pre>
+
+<h3>Cálculo del Oscilador Estocástico</h3>
+<pre><code>def stochastic_oscillator(df, window=14):
+    df['L14'] = df['low'].rolling(window=window).min()
+    df['H14'] = df['high'].rolling(window=window).max()
+    df['%K'] = 100 * ((df['close'] - df['L14']) / (df['H14'] - df['L14']))
+    df['%D'] = df['%K'].rolling(window=3).mean()
+    
+    return df
+</code></pre>
+
+<h3>Cálculo del MACD</h3>
+<pre><code>def macd(df, short_window=12, long_window=26, signal_window=9):
+    df['EMA12'] = df['close'].ewm(span=short_window, adjust=False).mean()
+    df['EMA26'] = df['close'].ewm(span=long_window, adjust=False).mean()
+    df['MACD'] = df['EMA12'] - df['EMA26']
+    df['Signal_Line'] = df['MACD'].ewm(span=signal_window, adjust=False).mean()
+    
+    return df
+</code></pre>
+
+<h3>Cálculo del RSI</h3>
+<pre><code>def rsi(df, window=14):
+    delta = df['close'].diff()
+    gain = (delta.where(delta &gt; 0, 0)).rolling(window=window).mean()
+    loss = (-delta.where(delta &lt; 0, 0)).rolling(window=window).mean()
+    rs = gain / loss
+    df['RSI'] = 100 - (100 / (1 + rs))
+    
+    return df
+</code></pre>
+
+<h2>Estrategias con Indicadores</h2>
+
+<h3>Stoch RSI</h3>
+<pre><code>def calculate_stoch_rsi(df, window=14):
+    df = calculate_rsi(df, window)
+    min_rsi = df['rsi'].rolling(window=window).min()
+    max_rsi = df['rsi'].rolling(window=window).max()
+    df['stoch_rsi'] = (df['rsi'] - min_rsi) / (max_rsi - min_rsi)
+    
+    return df
+
+def stoch_rsi_reversion_strategy(df, oversold=0.2, overbought=0.8):
+    df['signal'] = 0
+    df['signal'][(df['stoch_rsi'] &lt; oversold) &amp; (df['stoch_rsi'].shift(1) &gt;= oversold)] = 1
+    df['signal'][(df['stoch_rsi'] &gt; overbought) &amp; (df['stoch_rsi'].shift(1) &lt;= overbought)] = -1
+    df['position'] = df['signal'].diff()
+    
+    return df
+
+def stoch_rsi_trend_following_strategy(df):
+    df['signal'] = 0
+    df['signal'][(df['stoch_rsi'] &gt; 0.5) &amp; (df['stoch_rsi'].shift(1) &lt;= 0.5)] = 1
+    df['signal'][(df['stoch_rsi'] &lt; 0.5) &amp; (df['stoch_rsi'].shift(1) &gt;= 0.5)] = -1
+    df['position'] = df['signal'].diff()
+    
+    return df
+
+# Gráficos
+def plot_stoch_rsi(df):
+    fig, ax1 = plt.subplots(figsize=(14, 7))
+    ax1.plot(df.index, df['close'], label='Precio de Cierre', color='blue')
+    ax1.set_ylabel('Precio')
+    
+    ax2 = ax1.twinx()
+    ax2.plot(df.index, df['stoch_rsi'], label='RSI Estocástico', color='orange')
+    ax2.axhline(y=0.2, color='red', linestyle='--')
+    ax2.axhline(y=0.8, color='green', linestyle='--')
+    ax2.set_ylabel('RSI Estocástico')
+    
+    fig.suptitle('Precio de Cierre y RSI Estocástico')
+    ax1.legend(loc='upper left')
+    ax2.legend(loc='upper right')
+    plt.show()
+</code></pre>
+
+<h3>Divergencias</h3>
+<pre><code>def find_divergences(df):
+    df['Price_Trend'] = np.where(df['close'] &gt; df['close'].shift(1), 'up', 'down')
+    df['Stoch_Trend'] = np.where(df['%D'] &gt; df['%D'].shift(1), 'up', 'down')
+    df['MACD_Trend'] = np.where(df['MACD'] &gt; df['MACD'].shift(1), 'up', 'down')
+    df['RSI_Trend'] = np.where(df['RSI'] &gt; df['RSI'].shift(1), 'up', 'down')
+
+    df['Regular_Divergence'] = np.where(
+        ((df['Price_Trend'] == 'up') &amp; (df['Stoch_Trend'] == 'down')) |
+        ((df['Price_Trend'] == 'down') &amp; (df['Stoch_Trend'] == 'up')),
+        'divergence', 'none'
+        )
+    
+    df['Hidden_Divergence'] = np.where(
+        ((df['Price_Trend'] == 'up') &amp; (df['Stoch_Trend'] == 'up')) |
+        ((df['Price_Trend'] == 'down') &amp; (df['Stoch_Trend'] == 'down')),
+        'hidden_divergence', 'none'
+        )
+    
+    return df
+</code></pre>
+
+<h2>Análisis Gráfico</h2>
+
+<h3>Fibonacci</h3>
+<pre><code>def find_fibonacci_retracement_signals(df, high_col, low_col, close_col, window=30):
+    df['swing_high'] = df[high_col].rolling(window=window).max()
+    df['swing_low'] = df[low_col].rolling(window=window).min()
+    
+    signals = []
+
+    for i in range(window, len(df)):
+        high = df['swing_high'].iloc[i]
+        low = df['swing_low'].iloc[i]
+        fib_levels = fibonacci_retracement_levels(high, low)
+        
+        if df[close_col].iloc[i] &lt;= fib_levels['level_0.618']:
+            signals.append(('buy', df.index[i], df[close_col].iloc[i]))
+        
+        elif df[close_col].iloc[i] &gt;= fib_levels['level_0.618']:
+            signals.append(('sell', df.index[i], df[close_col].iloc[i]))
+    
+    return signals
+
+signals = find_fibonacci_retracement_signals(df, 'high', 'low', 'close')
+
+# Visualizar señales
+plt.figure(figsize=(10, 6))
+plt.plot(df['close'], label='Precio de Cierre')
+
+for signal in signals:
+    if signal[0] == 'buy':
+        plt.plot(signal[1], signal[2], 'g^', markersize=10)
+    elif signal[0] == 'sell':
+        plt.plot(signal[1], signal[2], 'rv', markersize=10)
+
+plt.title('Señales de Entrada y Salida basadas en Fibonacci')
+plt.legend()
+plt.show()
+</code></pre>
+
+<h3>Líneas de Tendencia</h3>
+<pre><code>def identify_trend(df, window=20):
+    df['trend'] = np.where(df['close'] &gt; df['close'].rolling(window).mean(), 'up', 'down')
+    
+    return df
+
+def identify_pullback(df, window=20):
+    df['pullback'] = np.where((df['close'] &lt; df['close'].rolling(window).mean()) &amp; (df['trend'] == 'up'), 'pullback_up', 
+    np.where((df['close'] &gt; df['close'].rolling(window).mean()) &amp; (df['trend'] == 'down'), 'pullback_down', 'no_pullback'))
+    
+    return df
+
+def identify_reversal_patterns(df, pattern):
+    # Placeholder de una función que identifica patrones de reversión específicos
+    df['reversal_pattern'] = np.nan  # Ejemplo de marcador de posición
+    
+    return df
+</code></pre>
+
+<h3>Patrones Gráficos</h3>
+<pre><code>df = identify_reversal_patterns(df, 'double_top')
+
+def identify_continuation_patterns(df, trend_col, pattern_col):
+    df['continuation_pattern'] = np.where((df[trend_col] == 'up') &amp; (df[pattern_col] == 'pullback_up'), 'continuation_up', 
+    np.where((df[trend_col] == 'down') &amp; (df[pattern_col] == 'pullback_down'), 'continuation_down', 'no_pattern'))
+    
+    return df
+
+# Ejemplo de uso para identificar patrones de continuación
+df = identify_continuation_patterns(df, 'trend', 'pullback')
+
+def identify_double_top(df):
+    df['double_top'] = np.where((df['high'] == df['high'].shift(1)) &amp; (df['high'] &gt; df['high'].shift(2)), 'double_top', 'no_pattern')
+    
+    return df
+
+def plot_pattern(df, pattern_col, title):
+    plt.figure(figsize=(10, 6))
+    plt.plot(df['close'], label='Precio de Cierre')
+
+    for i in range(len(df)):
+        if df[pattern_col].iloc[i] != 'no_pattern':
+            plt.scatter(df.index[i], df['close'].iloc[i], color='red', marker='x', s=100, label=df[pattern_col].iloc[i])
+
+    plt.title(title)
+    plt.legend()
+    plt.show()
+</code></pre>
+
+<h3>Ichimoku</h3>
+<pre><code>def ichimoku(df):
+    # Tenkan-sen (Línea de Conversión)
+    high_9 = df['high'].rolling(window=9).max()
+    low_9 = df['low'].rolling(window=9).min()
+    df['tenkan_sen'] = (high_9 + low_9) / 2
+
+    # Kijun-sen (Línea Base)
+    high_26 = df['high'].rolling(window=26).max()
+    low_26 = df['low'].rolling(window=26).min()
+    df['kijun_sen'] = (high_26 + low_26) / 2
+
+    # Senkou Span A (Span Adelantado A)
+    df['senkou_span_a'] = ((df['tenkan_sen'] + df['kijun_sen']) / 2).shift(26)
+
+    # Senkou Span B (Span Adelantado B)
+    high_52 = df['high'].rolling(window=52).max()
+    low_52 = df['low'].rolling(window=52).min()
+    df['senkou_span_b'] = ((high_52 + low_52) / 2).shift(26)
+
+    # Chikou Span (Span Rezagado)
+    df['chikou_span'] = df['close'].shift(-26)
+
+    return df
+
+# Supongamos que 'df' es un DataFrame con columnas 'high', 'low', 'close'
+df = ichimoku(df)
+
+def ichimoku_cross_strategy(df):
+    df['signal'] = 0
+    df['signal'][df['tenkan_sen'] &gt; df['kijun_sen']] = 1
+    df['signal'][df['tenkan_sen'] &lt; df['kijun_sen']] = -1
+    df['position'] = df['signal'].diff()
+
+    return df
+
+def ichimoku_cloud_strategy(df):
+    df['signal'] = 0
+    df['signal'][(df['close'] &gt; df['senkou_span_a']) &amp; (df['close'] &gt; df['senkou_span_b']) &amp; (df['tenkan_sen'] &gt; df['kijun_sen'])] = 1
+    df['signal'][(df['close'] &lt; df['senkou_span_a']) &amp; (df['close'] &lt; df['senkou_span_b']) &amp; (df['tenkan_sen'] &lt; df['kijun_sen'])] = -1
+    df['position'] = df['signal'].diff()
+
+    return df
+
+def plot_ichimoku(df):
+    plt.figure(figsize=(14, 7))
+    plt.plot(df.index, df['close'], label='Precio de Cierre')
+    plt.plot(df.index, df['tenkan_sen'], label='Tenkan-sen', color='red')
+    plt.plot(df.index, df['kijun_sen'], label='Kijun-sen', color='blue')
+    plt.fill_between(df.index, df['senkou_span_a'], df['senkou_span_b'], where=df['senkou_span_a'] &gt;= df['senkou_span_b'], facecolor='lightgreen', interpolate=True, alpha=0.5)  
+    plt.fill_between(df.index, df['senkou_span_a'], df['senkou_span_b'], where=df['senkou_span_a'] &lt; df['senkou_span_b'], facecolor='lightcoral', interpolate=True, alpha=0.5)
+    plt.plot(df.index, df['chikou_span'], label='Chikou Span', color='green')
+    plt.legend()
+    plt.title('Ichimoku Kinko Hyo')
+    plt.show()
+</code></pre>
+
+<h3>Perfil Volumétrico</h3>
+<pre><code>def plot_volume_profile(df, vol_profile):
+    fig, ax1 = plt.subplots(figsize=(14, 7))
+    
+    # Gráfico de precios
+    ax1.plot(df.index, df['close'], label='Precio de Cierre', color='blue')
+    ax1.set_ylabel('Precio')
+    
+    # Gráfico del perfil de volumen
+    ax2 = ax1.twinx()
+    ax2.barh(vol_profile['price'], vol_profile['volume'], alpha=0.3, color='gray')
+    ax2.set_ylabel('Volumen')
+    
+    ax1.set_title('Perfil de Volumen')
+    ax1.legend()
+    plt.show()
+
+def poc_trading_strategy(df, vol_profile):
+    poc_price = vol_profile.loc[vol_profile['volume'].idxmax(), 'price']
+    df['signal'] = 0
+    df['signal'][(df['close'] &gt; poc_price) &amp; (df['volume'] &gt; df['volume'].rolling(window=5).mean())] = 1
+    df['signal'][(df['close'] &lt; poc_price) &amp; (df['volume'] &gt; df['volume'].rolling(window=5).mean())] = -1
+    df['position'] = df['signal'].diff()
+    
+    return df, poc_price
+
+def volume_node_trading_strategy(df, vol_profile, threshold=0.1):
+    vol_profile['volume_pct'] = vol_profile['volume'] / vol_profile['volume'].sum()
+    hvn = vol_profile[vol_profile['volume_pct'] &gt; threshold]['price']
+    lvn = vol_profile[vol_profile['volume_pct'] &lt; threshold]['price']
+    df['signal'] = 0
+    df['signal'][(df['close'].isin(lvn)) &amp; (df['volume'] &gt; df['volume'].rolling(window=5).mean())] = 1
+    df['signal'][(df['close'].isin(hvn)) &amp; (df['volume'] &gt; df['volume'].rolling(window=5).mean())] = -1
+    df['position'] = df['signal'].diff()
+    
+    return df
+</code></pre>
+
+<h3>VWAP</h3>
+<pre><code>def calculate_vwap(df):
+    df['cum_price_vol'] = (df['close'] * df['volume']).cumsum()
+    df['cum_volume'] = df['volume'].cumsum()
+    df['vwap'] = df['cum_price_vol'] / df['cum_volume']
+    
+    return df
+
+def plot_vwap(df):
+    plt.figure(figsize=(14, 7))
+    plt.plot(df.index, df['close'], label='Precio de Cierre', color='blue')
+    plt.plot(df.index, df['vwap'], label='VWAP', color='orange', linestyle='--')
+    plt.title('Precio de Cierre y VWAP')
+    plt.xlabel('Fecha')
+    plt.ylabel('Precio')
+    plt.legend()
+    plt.show()
+
+def vwap_reversion_strategy(df):
+    df['signal'] = 0
+    df['signal'][(df['close'] &gt; df['vwap']) &amp; (df['close'].shift(1) &lt; df['vwap'].shift(1))] = 1
+    df['signal'][(df['close'] &lt; df['vwap']) &amp; (df['close'].shift(1) &gt; df['vwap'].shift(1))] = -1
+    df['position'] = df['signal'].diff()
+
+    return df
+
+def vwap_trend_following_strategy(df):
+    df['signal'] = 0
+    df['signal'][(df['close'] &gt; df['vwap'])] = 1
+    df['signal'][(df['close'] &lt; df['vwap'])] = -1
+    df['position'] = df['signal'].diff()
+
+    return df
+
+def calculate_rsi(df, window=14):
+    delta = df['close'].diff()
+    gain = (delta.where(delta &gt; 0, 0)).rolling(window=window).mean()
+    loss = (-delta.where(delta &lt; 0, 0)).rolling(window=window).mean()
+    rs = gain / loss
+    df['rsi'] = 100 - (100 / (1 + rs))
+    return df
+</code></pre>
+
+<h2>Integración de Estrategias de Trading</h2>
+
+<h3>Paso 1: Análisis del Marco Temporal</h3>
+
+<p><strong>Empezar desde marcos temporales más amplios (mensual y semanal) y luego pasar a marcos más cortos (diario e intradía):</strong> Identificar niveles clave de soporte y resistencia en estos marcos temporales.</p>
+<p><strong>Calcular y visualizar el perfil de volumen para identificar POC, HVN y LVN:</strong> Usar estos niveles como referencia para tomar decisiones de entrada y salida.</p>
+
+<h3>Paso 2: Confirmación Técnica</h3>
+
+<p><strong>Calcular VWAP</strong> y utilizarlo como referencia para identificar posibles puntos de reversión o seguimiento de tendencias.</p>
+<p><strong>Calcular y visualizar el RSI Estocástico:</strong> Buscar señales de reversión cuando el RSI Estocástico esté en niveles de sobrecompra o sobreventa.</p>
+<p><strong>Calcular y visualizar los componentes de Ichimoku:</strong> Confirmar señales de trading con cruces de Tenkan-sen y Kijun-sen y la posición del precio respecto a la nube Ichimoku.</p>
+
+<h3>Paso 3: Psicología y Gestión del Riesgo</h3>
+
+<h4>Checklist y Guía de Entrada:</h4>
+<ul>
+    <li>Seguir una lista de verificación antes de entrar en una operación.</li>
+    <li>Evaluar los pros y contras de cada operación potencial basándose en niveles clave y confirmaciones técnicas.</li>
+</ul>
+
+<h4>Control Emocional:</h4>
+<ul>
+    <li>Mantener la disciplina y seguir las reglas establecidas.</li>
+    <li>Aceptar la responsabilidad de las decisiones de trading y evitar culpar al mercado.</li>
+    <li>Adoptar una mentalidad de probabilidad y estar preparado para cualquier resultado.</li>
+</ul>
+
+<h2>Estrategias Avanzadas para Trading</h2>
+
+<h3>Trade Largo con Confluencia de Marcos Temporales</h3>
+<p><strong>Marco temporal principal donde se encontró la configuración de entrada</strong> = acción del precio alcista = sesgo alcista.</p>
+<p><strong>Marco temporal inferior = acción del precio alcista nuevamente</strong> = confirmando el sesgo alcista del marco temporal principal.</p>
+<p><strong>Marco temporal de entrada = acción del precio alcista nuevamente</strong> = confirma los otros dos marcos temporales = estrategia de entrada.</p>
+
+<h3>Trade Corto con Confluencia de Marcos Temporales</h3>
+<p><strong>Marco temporal principal donde se encontró la configuración de entrada</strong> = acción del precio bajista = sesgo bajista.</p>
+<p><strong>Marco temporal inferior = acción del precio bajista nuevamente</strong> = confirmando el sesgo bajista del marco temporal principal.</p>
+<p><strong>Marco temporal de entrada = acción del precio bajista nuevamente</strong> = confirma los otros dos marcos temporales = estrategia de entrada.</p>
+
+<pre><code>def identify_time_frame_confluence(df, higher_time_frame, lower_time_frame, entry_time_frame):
+    # Identificar la tendencia en diferentes marcos temporales
+    df['higher_tf_trend'] = np.where(df[higher_time_frame] &gt; df[higher_time_frame].shift(1), 'up', 'down')
+    df['lower_tf_trend'] = np.where(df[lower_time_frame] &gt; df[lower_time_frame].shift(1), 'up', 'down')
+    df['entry_tf_trend'] = np.where(df[entry_time_frame] &gt; df[entry_time_frame].shift(1), 'up', 'down')
+    
+    # Confirmar la confluencia de los marcos temporales
+    df['confluence'] = np.where(
+        (df['higher_tf_trend'] == df['lower_tf_trend']) &amp; (df['lower_tf_trend'] == df['entry_tf_trend']), 
+        df['higher_tf_trend'], 'no_confluence')
+    
+    return df
+</code></pre>
+
+<h3>Estrategia de Combo de Tendencia Dinámica</h3>
+<p>El combo de tendencia dinámica se enfoca en operar en la dirección de la tendencia dominante, esperando una ruptura seguida de un retroceso.</p>
+<ol>
+    <li>Seguimiento de la tendencia principal.</li>
+    <li>Confirmar la ruptura y el retroceso.</li>
+    <li>Buscar confluencia de marcos temporales.</li>
+</ol>
+
+<pre><code>def dynamic_trend_combo_strategy(df):
+    df['signal'] = 0
+    df['signal'][(df['close'] &gt; df['resistance']) &amp; (df['close'].shift(1) &lt;= df['resistance'])] = 1
+    df['signal'][(df['close'] &lt; df['support']) &amp; (df['close'].shift(1) &gt;= df['support'])] = -1
+    df['position'] = df['signal'].diff()
+    
+    return df
+    
+</code></pre>
+
+<h3>Gestión de Riesgo y Tamaño de Posición</h3>
+<p><strong>Cuánto arriesgar por operación:</strong> Como principiante, arriesga un máximo del 1% de tu cuenta por operación.</p>
+<p><strong>Relación de Riesgo-Recompensa:</strong> Asegúrate de que la relación riesgo-recompensa sea favorable, por ejemplo, 1:2.</p>
+<p><strong>Stop-Loss y Objetivo de Beneficio:</strong> Establece un stop-loss para limitar las pérdidas y un objetivo de beneficio para cerrar la posición en ganancias.</p>
+<p><strong>Tamaño de la Posición:</strong> Calcula el tamaño de la posición basado en el riesgo y el tamaño de la cuenta.</p>
+
+<h4>Ejemplo:</h4>
+<pre><code>def calculate_position_size(account_balance, risk_per_trade, entry_price, stop_loss_price):
+    risk_amount = account_balance * risk_per_trade
+    pip_risk = abs(entry_price - stop_loss_price)
+    position_size = risk_amount / pip_risk
+    
+    return position_size
+
+account_balance = 5000
+risk_per_trade = 0.01
+entry_price = 76.75
+stop_loss_price = 75.90
+
+position_size = calculate_position_size(account_balance, risk_per_trade, entry_price, stop_loss_price)
+print(f"Tamaño de la posición: {position_size} unidades")
+</code></pre>
+
+<h3>Uso del Apalancamiento y el Margen</h3>
+<p><strong>Apalancamiento:</strong> Permite controlar una mayor cantidad de dinero con una menor cantidad de capital.</p>
+<p><strong>Margen:</strong> Es la cantidad de dinero que necesitas en tu cuenta para mantener una posición apalancada.</p>
+<p><strong>Selección de Broker:</strong> Elige un broker confiable y adecuado para tus necesidades.</p>
+<p><strong>Practica en una cuenta demo antes de operar con dinero real.</strong></p>
+
+<h3>Estrategia de Correlación Usando Bitcoin como Indicador Principal</h3>
+<p><strong>Utilizar la configuración de Bitcoin como indicador principal para entradas correlacionadas</strong></p>
+<p><strong>Confirmación de ruptura en Bitcoin:</strong> Esperar una confirmación de ruptura en Bitcoin antes de buscar entradas en activos correlacionados.</p>
+<p><strong>Entradas basadas en correlación:</strong> Buscar configuraciones de entrada en activos que estén fuertemente correlacionados con Bitcoin.</p>
+
+<pre><code>def correlation_trading_strategy(df, lead_asset, correlated_asset):
+    df['lead_signal'] = np.where((df[lead_asset] &gt; df[lead_asset].shift(1)), 1, -1)
+    df['correlated_signal'] = np.where((df[correlated_asset] &gt; df[correlated_asset].shift(1)), 1, -1)
+    df['trade_signal'] = np.where((df['lead_signal'] == df['correlated_signal']), df['lead_signal'], 0)
+    
+    return df
+</code></pre>
+
+<h3>Ejemplo de Confluencia en USD/CAD</h3>
+<p><strong>Marco temporal semanal:</strong> Identificar una tendencia bajista.</p>
+<p><strong>Marco temporal diario:</strong> Confirmar la continuación de la tendencia bajista.</p>
+<p><strong>Marco temporal intradía:</strong> Buscar una entrada en una ruptura a la baja.</p>
+
+<pre><code>def identify_trend(df, window=20):
+    df['trend'] = np.where(df['close'] &gt; df['close'].rolling(window).mean(), 'up', 'down')
+    
+    return df
+
+def identify_pullback(df, window=20):
+    df['pullback'] = np.where((df['close'] &lt; df['close'].rolling(window).mean()) &amp; (df['trend'] == 'up'), 'pullback_up', 
+                              np.where((df['close'] &gt; df['close'].rolling(window).mean()) &amp; (df['trend'] == 'down'), 'pullback_down', 'no_pullback'))
+    
+    return df
+</code></pre>
+
+<h3>Estrategia de Salida Múltiple</h3>
+<p>Esta estrategia implica identificar múltiples niveles de soporte y resistencia para establecer varios objetivos de salida. La clave es observar la acción del precio en estos niveles para decidir en cuál salir.</p>
+
+<h4>Procedimiento:</h4>
+<ol>
+    <li>Identificar niveles de soporte y resistencia cercanos.</li>
+    <li>Observar la acción del precio en estos niveles.</li>
+    <li>Salir en el nivel donde se observe una reacción significativa de la acción del precio.</li>
+</ol>
+
+<pre><code>def identify_exit_targets(df, levels):
+    df['exit_target'] = np.nan
+    for level in levels:
+        df.loc[df['close'] == level, 'exit_target'] = 'exit'
+    
+    return df
+</code></pre>
+
+<h4>Ejemplos:</h4>
+<ol>
+    <li>Si hay múltiples velas de reacción en un nivel de resistencia, salir en ese nivel.</li>
+    <li>Si no hay reacción significativa en el primer nivel, esperar a los siguientes niveles.</li>
+</ol>
+
+<h2>Integración de Estrategias</h2>
+<p>Finalmente, integramos estas estrategias avanzadas con la gestión del riesgo, relación riesgo-recompensa y uso de indicadores líderes para entradas correlacionadas.</p>
+
+<h4>Gestión del Riesgo:</h4>
+<ul>
+    <li>Riesgo por operación: No más del 1% del capital total.</li>
+    <li>Relación Riesgo-Recompensa: Idealmente 1:2 o mejor.</li>
+</ul>
+
+<h4>Posicionamiento:</h4>
+<p>Calcular el tamaño de la posición basado en el riesgo máximo permitido y la distancia del stop-loss.</p>
+
+<h3>Uso de Indicadores Líderes</h3>
+<p>Utilizar la acción del precio de activos altamente correlacionados (como Bitcoin) para confirmar entradas en otros activos correlacionados (como acciones de empresas mineras de criptomonedas).</p>
+
+<pre><code># Gestión del riesgo
+account_balance = 5000
+risk_per_trade = account_balance * 0.01
+
+def calculate_position_size(entry_price, stop_loss_price, risk_per_trade):
+    pips = abs(entry_price - stop_loss_price)
+    pip_value = risk_per_trade / pips
+    
+    return pip_value
+
+entry_price = 76.75
+stop_loss_price = 75.90
+pip_value = calculate_position_size(entry_price, stop_loss_price, risk_per_trade)
+
+print(f"Valor por pip: {pip_value}")
+</code></pre>
+
+<h3>Visualización de la Estrategia Integrada</h3>
+<pre><code>def plot_combined_strategy(df, vol_profile):
+    fig, ax1 = plt.subplots(figsize=(14, 7))
+    ax1.plot(df.index, df['close'], label='Precio de Cierre', color='blue')
+    ax1.plot(df.index, df['vwap'], label='VWAP', color='orange', linestyle='--')
+    ax1.plot(df.index, df['tenkan_sen'], label='Tenkan-sen', color='red')
+    ax1.plot(df.index, df['kijun_sen'], label='Kijun-sen', color='blue')
+    ax1.fill_between(df.index, df['senkou_span_a'], df['senkou_span_b'], where=df['senkou_span_a'] &gt;= df['senkou_span_b'], facecolor='lightgreen', interpolate=True, alpha=0.5)
+    ax1.fill_between(df.index, df['senkou_span_a'], df['senkou_span_b'], where=df['senkou_span_a'] &lt; df['senkou_span_b'], facecolor='lightcoral', interpolate=True, alpha=0.5)
+    ax1.plot(df.index, df['chikou_span'], label='Chikou Span', color='green')
+    ax2 = ax1.twinx()
+    ax2.barh(vol_profile['price'], vol_profile['volume'], alpha=0.3, color='gray')
+    ax2.set_ylabel('Volumen')
+    ax1.set_title('Estrategia Combinada')
+    ax1.legend(loc='upper left')
+    ax2.legend(loc='upper right')
+    plt.show()
+</code></pre>
+
+</body>
+</html>
