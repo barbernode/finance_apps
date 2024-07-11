@@ -146,6 +146,16 @@ def wait_until_next_roll(driver):
             else:
                 logger.warning("Balance did not change")
 
+            # Handle additional banner after roll
+            try:
+                additional_banner = WebDriverWait(driver, 10).until(
+                    EC.element_to_be_clickable((By.XPATH, "//div[contains(@class, 'ui-dialog') and contains(@style, 'display: block')]//button[text()='PLAY NOW']"))
+                )
+                additional_banner.click()
+                logger.info("Closed the additional banner")
+            except Exception as e:
+                logger.info("Additional banner not found or not clickable")
+
             # Wait for 1 hour and 5 minutes (3900 seconds) before running again
             time.sleep(3900)
         except Exception as e:
