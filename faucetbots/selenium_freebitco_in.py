@@ -100,35 +100,6 @@ def login(driver):
         take_screenshot(driver, "login_error_screenshot.png")
         raise
 
-def wait_until_reset(driver):
-    """
-    Waits until the free roll countdown resets.
-
-    Parameters:
-    driver (WebDriver): The WebDriver instance controlling the browser.
-    """
-    try:
-        countdown_element = WebDriverWait(driver, 30).until(
-            EC.visibility_of_element_located((By.CSS_SELECTOR, ".countdown"))
-        )
-        countdown_time = countdown_element.text
-        logger.info(f"Countdown time: {countdown_time}")
-
-        # Extract minutes and seconds from the countdown
-        parts = countdown_time.split(':')
-        if len(parts) == 2:
-            minutes = int(parts[0])
-            seconds = int(parts[1])
-            total_wait_time = minutes * 60 + seconds + 60  # Adding 60 seconds buffer
-            logger.info(f"Waiting for {total_wait_time} seconds until the next roll")
-            time.sleep(total_wait_time)
-        else:
-            logger.error("Unable to parse countdown time")
-    except Exception as e:
-        logger.error(f"An error occurred while waiting for the countdown to reset: {e}", exc_info=True)
-        take_screenshot(driver, "countdown_error_screenshot.png")
-        raise
-
 def log_earnings(session_start_balance, session_end_balance):
     """
     Logs the BTC earnings for the session.
@@ -142,6 +113,44 @@ def log_earnings(session_start_balance, session_end_balance):
     with open("btc_earnings_log.txt", "a") as log_file:
         log_file.write(log_entry)
     logger.info(log_entry)
+
+def wait_until_next_roll(driver):
+    """
+    Waits until the next roll is available, based on the presence or absence of the countdown timer.
+
+    Parameters:
+    driver (WebDriver): The WebDriver instance controlling the browser.
+    """
+    while True:
+        try:
+            # Check for the presence of the "ROLL!" button
+            roll_button = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.ID, "free_play_form_button"))
+            )
+            driver.execute_script("arguments[0].scrollIntoView();", roll_button)
+            roll_button.click()
+            logger.info("Clicked the ROLL! button")
+
+            # Wait for the balance to change
+            initial_balance = driver.find_element(By.CSS_SELECTOR, "span#balance").text
+            WebDriverWait(driver, 60).until(
+                lambda driver: driver.find_element(By.CSS_SELECTOR, "span#balance").text != initial_balance
+            )
+            new_balance = driver.find_element(By.CSS_SELECTOR, "span#balance").text
+            logger.info(f"New balance: {new_balance}")
+
+            # Check if the balance has changed
+            if initial_balance != new_balance:
+                logger.info("Balance has changed successfully")
+                log_earnings(initial_balance, new_balance)
+            else:
+                logger.warning("Balance did not change")
+
+            # Wait for 1 hour and 5 minutes (3900 seconds) before running again
+            time.sleep(3900)
+        except Exception as e:
+            logger.error(f"An error occurred: {e}", exc_info=True)
+            take_screenshot(driver, "error_screenshot.png")
 
 # Initialize the WebDriver only once
 driver = webdriver.Firefox(service=service, options=firefox_options)
@@ -173,9 +182,6 @@ try:
 
     while True:
         try:
-            # Wait until the free roll countdown resets
-            wait_until_reset(driver)
-
             # Handle the cookie consent banner using the provided XPath
             try:
                 cookie_consent_button = WebDriverWait(driver, 10).until(
@@ -192,37 +198,7 @@ try:
                 except Exception as js_error:
                     logger.error(f"An error occurred while hiding cookie banner: {js_error}", exc_info=True)
 
-            # Read the initial balance
-            initial_balance_element = WebDriverWait(driver, 30).until(
-                EC.visibility_of_element_located((By.CSS_SELECTOR, "span#balance"))
-            )
-            initial_balance = initial_balance_element.text
-            logger.info(f"Initial balance: {initial_balance}")
-
-            # Click the "ROLL!" button
-            roll_button = WebDriverWait(driver, 30).until(
-                EC.element_to_be_clickable((By.ID, "free_play_form_button"))
-            )
-            driver.execute_script("arguments[0].scrollIntoView();", roll_button)
-            roll_button.click()
-            logger.info("Clicked the ROLL! button")
-
-            # Wait for the balance to change
-            WebDriverWait(driver, 60).until(
-                lambda driver: driver.find_element(By.CSS_SELECTOR, "span#balance").text != initial_balance
-            )
-            new_balance = driver.find_element(By.CSS_SELECTOR, "span#balance").text
-            logger.info(f"New balance: {new_balance}")
-
-            # Check if the balance has changed
-            if initial_balance != new_balance:
-                logger.info("Balance has changed successfully")
-                log_earnings(initial_balance, new_balance)
-            else:
-                logger.warning("Balance did not change")
-
-            # Wait for 1 hour and 5 minutes (3900 seconds) before running again
-            time.sleep(3900)
+            wait_until_next_roll(driver)
 
         except Exception as e:
             logger.error(f"An error occurred: {e}", exc_info=True)
