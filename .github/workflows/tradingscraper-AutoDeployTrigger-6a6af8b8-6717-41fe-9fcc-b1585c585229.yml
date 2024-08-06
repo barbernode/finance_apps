@@ -1,0 +1,47 @@
+name: Trigger auto deployment for tradingscraper
+
+# When this action will be executed
+on:
+  # Automatically trigger it when detected changes in repo
+  push:
+    branches: 
+      [ main ]
+    paths:
+    - '/media/luisvinatea/8beb347d-a494-4dc7-846c-d79cf12e1039/Projects/Apps/TradingScraper/**'
+    - '.github/workflows/tradingscraper-AutoDeployTrigger-6a6af8b8-6717-41fe-9fcc-b1585c585229.yml'
+
+  # Allow manual trigger 
+  workflow_dispatch:      
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions: 
+      id-token: write #This is required for requesting the OIDC JWT Token
+      contents: read #Required when GH token is used to authenticate with private repo
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.TRADINGSCRAPER_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.TRADINGSCRAPER_AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.TRADINGSCRAPER_AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          appSourcePath: ${{ github.workspace }}/media/luisvinatea/8beb347d-a494-4dc7-846c-d79cf12e1039/Projects/Apps/TradingScraper 
+          registryUrl: tradingscraper.azurecr.io
+          registryUsername: ${{ secrets.TRADINGSCRAPER_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.TRADINGSCRAPER_REGISTRY_PASSWORD }}
+          containerAppName: tradingscraper
+          resourceGroup: luisvinatea
+          imageToBuild: tradingscraper.azurecr.io/tradingscraper:${{ github.sha }}
+          _buildArgumentsKey_: |
+            _buildArgumentsValues_
+
+
